@@ -3,52 +3,51 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Beach Dance Animation</title>
+<title>Kitchen Bakers</title>
 
 <style>
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
+    *{
+        margin:0;
+        padding:0;
+        box-sizing:border-box;
     }
 
-    body {
-        overflow: hidden;
-        background: linear-gradient(to bottom, #6ed0ff 0%, #8ee3ff 45%, #f7d79b 45%, #e7c27a 100%);
-        font-family: Arial, sans-serif;
+    body{
+        overflow:hidden;
+        background:#f4efe6;
+        font-family:Arial,sans-serif;
     }
 
-    canvas {
-        display: block;
+    canvas{
+        display:block;
     }
 
-    .ui {
-        position: absolute;
-        top: 20px;
-        left: 20px;
-        color: white;
-        background: rgba(0,0,0,0.35);
-        padding: 12px 18px;
-        border-radius: 12px;
-        backdrop-filter: blur(6px);
+    .ui{
+        position:absolute;
+        top:20px;
+        left:20px;
+        background:rgba(255,255,255,0.85);
+        padding:14px 18px;
+        border-radius:14px;
+        box-shadow:0 8px 25px rgba(0,0,0,0.12);
+        z-index:10;
     }
 
-    .ui h1 {
-        font-size: 20px;
-        margin-bottom: 6px;
+    .ui h1{
+        font-size:20px;
+        margin-bottom:6px;
     }
 
-    .ui p {
-        opacity: 0.85;
-        font-size: 14px;
+    .ui p{
+        color:#555;
     }
 </style>
 </head>
 <body>
 
 <div class="ui">
-    <h1>Beach Dance</h1>
-    <p>Click on the character to start dancing</p>
+    <h1>Kitchen Bakers</h1>
+    <p>Click on either baker to make them jump</p>
 </div>
 
 <canvas id="canvas"></canvas>
@@ -57,234 +56,267 @@
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
-let w, h;
+let w,h;
 
-function resize() {
-    w = canvas.width = window.innerWidth;
-    h = canvas.height = window.innerHeight;
+function resize(){
+    w = canvas.width = innerWidth;
+    h = canvas.height = innerHeight;
 }
 window.addEventListener("resize", resize);
 resize();
 
-const dancer = {
-    x: w / 2,
-    y: h * 0.68,
-    scale: 1,
-    dancing: false,
-    danceTime: 0
-};
+class Baker{
+
+    constructor(x,color,shirt){
+
+        this.x = x;
+        this.y = h * 0.72;
+
+        this.bodyColor = color;
+        this.shirtColor = shirt;
+
+        this.jump = 0;
+        this.velocity = 0;
+    }
+
+    triggerJump(){
+
+        if(this.jump === 0){
+            this.velocity = -18;
+        }
+    }
+
+    update(){
+
+        this.velocity += 0.9;
+        this.jump += this.velocity;
+
+        if(this.jump > 0){
+            this.jump = 0;
+            this.velocity = 0;
+        }
+    }
+
+    draw(){
+
+        const y = this.y + this.jump;
+
+        ctx.save();
+        ctx.translate(this.x, y);
+
+        // shadow
+        ctx.beginPath();
+        ctx.fillStyle = "rgba(0,0,0,0.18)";
+        ctx.ellipse(0, 110, 55, 14, 0, 0, Math.PI*2);
+        ctx.fill();
+
+        // legs
+        ctx.strokeStyle = "#2f2f2f";
+        ctx.lineWidth = 14;
+        ctx.lineCap = "round";
+
+        ctx.beginPath();
+        ctx.moveTo(-18, 70);
+        ctx.lineTo(-20, 115);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(18, 70);
+        ctx.lineTo(20, 115);
+        ctx.stroke();
+
+        // body
+        ctx.beginPath();
+        ctx.fillStyle = this.shirtColor;
+        ctx.ellipse(0, 20, 58, 75, 0, 0, Math.PI*2);
+        ctx.fill();
+
+        // apron
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(-22, -5, 44, 70);
+
+        // arms
+        ctx.strokeStyle = this.bodyColor;
+        ctx.lineWidth = 16;
+
+        ctx.beginPath();
+        ctx.moveTo(-45, 5);
+        ctx.lineTo(-75, 45);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(45, 5);
+        ctx.lineTo(75, 45);
+        ctx.stroke();
+
+        // head
+        ctx.beginPath();
+        ctx.fillStyle = this.bodyColor;
+        ctx.arc(0, -80, 42, 0, Math.PI*2);
+        ctx.fill();
+
+        // chef hat
+        ctx.fillStyle = "#fff";
+
+        ctx.beginPath();
+        ctx.arc(-20, -120, 22, 0, Math.PI*2);
+        ctx.arc(0, -132, 26, 0, Math.PI*2);
+        ctx.arc(22, -120, 22, 0, Math.PI*2);
+        ctx.fill();
+
+        ctx.fillRect(-32,-120,64,24);
+
+        // eyes
+        ctx.fillStyle = "#222";
+
+        ctx.beginPath();
+        ctx.arc(-12,-85,4,0,Math.PI*2);
+        ctx.arc(12,-85,4,0,Math.PI*2);
+        ctx.fill();
+
+        // smile
+        ctx.strokeStyle = "#333";
+        ctx.lineWidth = 3;
+
+        ctx.beginPath();
+        ctx.arc(0,-68,12,0,Math.PI);
+        ctx.stroke();
+
+        // bowl
+        ctx.fillStyle = "#c17d3f";
+
+        ctx.beginPath();
+        ctx.ellipse(0, 48, 26, 14, 0, 0, Math.PI*2);
+        ctx.fill();
+
+        // dough
+        ctx.fillStyle = "#f5dfb5";
+
+        ctx.beginPath();
+        ctx.arc(0,42,12,0,Math.PI*2);
+        ctx.fill();
+
+        ctx.restore();
+    }
+
+    isClicked(mx,my){
+
+        const y = this.y + this.jump;
+
+        return (
+            mx > this.x - 65 &&
+            mx < this.x + 65 &&
+            my > y - 140 &&
+            my < y + 90
+        );
+    }
+}
+
+const bakers = [
+    new Baker(w*0.35, "#f0c28b", "#ff884d"),
+    new Baker(w*0.65, "#d89b62", "#4da6ff")
+];
 
 canvas.addEventListener("click", e => {
 
     const rect = canvas.getBoundingClientRect();
+
     const mx = e.clientX - rect.left;
     const my = e.clientY - rect.top;
 
-    const dx = mx - dancer.x;
-    const dy = my - dancer.y;
+    bakers.forEach(baker => {
 
-    if (Math.abs(dx) < 80 && Math.abs(dy) < 180) {
-        dancer.dancing = !dancer.dancing;
-    }
+        if(baker.isClicked(mx,my)){
+            baker.triggerJump();
+        }
+    });
 });
 
-function drawBackground() {
+function drawKitchen(){
 
-    // sun
-    ctx.beginPath();
-    ctx.fillStyle = "#ffd95c";
-    ctx.arc(w - 150, 120, 60, 0, Math.PI * 2);
-    ctx.fill();
+    // wall
+    ctx.fillStyle = "#f5e8d5";
+    ctx.fillRect(0,0,w,h);
 
-    // ocean
-    ctx.fillStyle = "#39b7e8";
-    ctx.fillRect(0, h * 0.45, w, h * 0.15);
+    // floor
+    ctx.fillStyle = "#d7b38a";
+    ctx.fillRect(0,h*0.78,w,h*0.22);
 
-    // waves
-    ctx.strokeStyle = "rgba(255,255,255,0.5)";
-    ctx.lineWidth = 2;
+    // tiles
+    ctx.strokeStyle = "rgba(0,0,0,0.06)";
+    ctx.lineWidth = 1;
 
-    for (let i = 0; i < 6; i++) {
+    for(let x=0;x<w;x+=60){
 
         ctx.beginPath();
-
-        for (let x = 0; x < w; x += 20) {
-
-            const y =
-                h * 0.5 +
-                i * 15 +
-                Math.sin(x * 0.02 + performance.now() * 0.002) * 5;
-
-            if (x === 0) {
-                ctx.moveTo(x, y);
-            } else {
-                ctx.lineTo(x, y);
-            }
-        }
-
+        ctx.moveTo(x,0);
+        ctx.lineTo(x,h*0.78);
         ctx.stroke();
     }
-}
 
-function drawPalms() {
-
-    function palm(x) {
-
-        ctx.strokeStyle = "#6d4325";
-        ctx.lineWidth = 16;
+    for(let y=0;y<h*0.78;y+=60){
 
         ctx.beginPath();
-        ctx.moveTo(x, h);
-        ctx.quadraticCurveTo(x + 30, h - 220, x, h - 420);
+        ctx.moveTo(0,y);
+        ctx.lineTo(w,y);
         ctx.stroke();
-
-        ctx.strokeStyle = "#2f9e44";
-        ctx.lineWidth = 8;
-
-        for (let i = 0; i < 7; i++) {
-
-            const angle = -1 + i * 0.35;
-
-            ctx.beginPath();
-            ctx.moveTo(x, h - 420);
-
-            ctx.lineTo(
-                x + Math.cos(angle) * 100,
-                h - 420 + Math.sin(angle) * 100
-            );
-
-            ctx.stroke();
-        }
     }
 
-    palm(120);
-    palm(w - 120);
-}
+    // counter
+    ctx.fillStyle = "#9f6d43";
+    ctx.fillRect(0,h*0.58,w,40);
 
-function drawDancer(time) {
+    // shelves
+    ctx.fillStyle = "#8c5a34";
 
-    const t = dancer.dancing ? time * 0.008 : 0;
+    ctx.fillRect(120,140,220,18);
+    ctx.fillRect(w-340,180,220,18);
 
-    const sway = Math.sin(t * 2) * 15;
-    const hip = Math.sin(t * 3) * 12;
-    const armSwing = Math.sin(t * 4) * 25;
-    const legSwing = Math.sin(t * 4) * 18;
+    // kitchen items
+    for(let i=0;i<4;i++){
 
-    ctx.save();
+        ctx.fillStyle = ["#ff6b6b","#ffd166","#4ecdc4","#6c5ce7"][i];
 
-    ctx.translate(dancer.x, dancer.y + Math.sin(t * 6) * 5);
-
-    // shadow
-    ctx.beginPath();
-    ctx.fillStyle = "rgba(0,0,0,0.2)";
-    ctx.ellipse(0, 120, 55, 16, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // head
-    ctx.beginPath();
-    ctx.fillStyle = "#f1c27d";
-    ctx.arc(0, -130, 32, 0, Math.PI * 2);
-    ctx.fill();
-
-    // hair
-    ctx.beginPath();
-    ctx.fillStyle = "#2b1b12";
-    ctx.arc(0, -138, 35, Math.PI, Math.PI * 2);
-    ctx.fill();
-
-    // body
-    ctx.save();
-    ctx.rotate(sway * 0.01);
-
-    ctx.fillStyle = "#f1c27d";
-
-    ctx.beginPath();
-    ctx.roundRect(-24, -95, 48, 95, 20);
-    ctx.fill();
-
-    // bikini top
-    ctx.fillStyle = "#ff4fa3";
-
-    ctx.beginPath();
-    ctx.moveTo(-24, -75);
-    ctx.lineTo(0, -55);
-    ctx.lineTo(-8, -35);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.beginPath();
-    ctx.moveTo(24, -75);
-    ctx.lineTo(0, -55);
-    ctx.lineTo(8, -35);
-    ctx.closePath();
-    ctx.fill();
-
-    // bikini bottom
-    ctx.beginPath();
-    ctx.moveTo(-24, -5);
-    ctx.lineTo(24, -5);
-    ctx.lineTo(16, 28);
-    ctx.lineTo(-16, 28);
-    ctx.closePath();
-    ctx.fill();
-
-    // arms
-    ctx.strokeStyle = "#f1c27d";
-    ctx.lineWidth = 14;
-    ctx.lineCap = "round";
-
-    // left arm
-    ctx.beginPath();
-    ctx.moveTo(-22, -70);
-    ctx.lineTo(-65, -20 + armSwing);
-    ctx.stroke();
-
-    // right arm
-    ctx.beginPath();
-    ctx.moveTo(22, -70);
-    ctx.lineTo(65, -20 - armSwing);
-    ctx.stroke();
-
-    // legs
-    ctx.beginPath();
-    ctx.moveTo(-10, 25);
-    ctx.lineTo(-18 - legSwing * 0.2, 110);
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.moveTo(10, 25);
-    ctx.lineTo(18 + legSwing * 0.2, 110);
-    ctx.stroke();
-
-    ctx.restore();
-
-    // sparkle particles when dancing
-    if (dancer.dancing) {
-
-        for (let i = 0; i < 10; i++) {
-
-            const angle = (Math.PI * 2 / 10) * i + t;
-
-            const px = Math.cos(angle) * 90;
-            const py = Math.sin(angle) * 120;
-
-            ctx.beginPath();
-            ctx.fillStyle = `hsla(${time * 0.05 + i * 30},100%,70%,0.8)`;
-            ctx.arc(px, py - 40, 4, 0, Math.PI * 2);
-            ctx.fill();
-        }
+        ctx.fillRect(145+i*48,95,26,45);
     }
 
-    ctx.restore();
+    for(let i=0;i<4;i++){
+
+        ctx.fillStyle = ["#ff9f43","#2ed573","#70a1ff","#eccc68"][i];
+
+        ctx.fillRect(w-315+i*48,135,26,45);
+    }
+
+    // oven
+    ctx.fillStyle = "#444";
+    ctx.fillRect(w/2-90,h*0.58,180,130);
+
+    ctx.fillStyle = "#222";
+    ctx.fillRect(w/2-60,h*0.62,120,70);
+
+    ctx.fillStyle = "#ffb347";
+    ctx.fillRect(w/2-40,h*0.645,80,22);
+
+    // oven knobs
+    for(let i=0;i<4;i++){
+
+        ctx.beginPath();
+        ctx.fillStyle="#ddd";
+        ctx.arc(w/2-45+i*30,h*0.60,6,0,Math.PI*2);
+        ctx.fill();
+    }
 }
 
-function animate(time) {
+function animate(){
 
-    ctx.clearRect(0, 0, w, h);
+    ctx.clearRect(0,0,w,h);
 
-    drawBackground();
-    drawPalms();
-    drawDancer(time);
+    drawKitchen();
+
+    bakers.forEach(baker=>{
+        baker.update();
+        baker.draw();
+    });
 
     requestAnimationFrame(animate);
 }

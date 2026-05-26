@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Drift Car Simulator</title>
+<title>Beach Dance Animation</title>
 
 <style>
     * {
@@ -14,7 +14,7 @@
 
     body {
         overflow: hidden;
-        background: #111;
+        background: linear-gradient(to bottom, #6ed0ff 0%, #8ee3ff 45%, #f7d79b 45%, #e7c27a 100%);
         font-family: Arial, sans-serif;
     }
 
@@ -27,486 +27,264 @@
         top: 20px;
         left: 20px;
         color: white;
-        background: rgba(0,0,0,0.45);
-        padding: 14px 18px;
+        background: rgba(0,0,0,0.35);
+        padding: 12px 18px;
         border-radius: 12px;
-        backdrop-filter: blur(8px);
-        z-index: 10;
+        backdrop-filter: blur(6px);
     }
 
     .ui h1 {
         font-size: 20px;
-        margin-bottom: 8px;
+        margin-bottom: 6px;
     }
 
     .ui p {
-        opacity: 0.8;
-        margin: 4px 0;
-    }
-
-    .speed {
-        margin-top: 10px;
-        color: #58c7ff;
+        opacity: 0.85;
+        font-size: 14px;
     }
 </style>
 </head>
 <body>
 
 <div class="ui">
-    <h1>Drift Simulator</h1>
-    <p>↑ Accelerate</p>
-    <p>↓ Brake / Reverse</p>
-    <p>← → Drift Steering</p>
-    <div class="speed" id="speed">Speed: 0</div>
+    <h1>Beach Dance</h1>
+    <p>Click on the character to start dancing</p>
 </div>
 
-<canvas id="game"></canvas>
+<canvas id="canvas"></canvas>
 
 <script>
-const canvas = document.getElementById("game");
+const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
-const speedEl = document.getElementById("speed");
 
-let width, height;
+let w, h;
 
 function resize() {
-    width = canvas.width = window.innerWidth;
-    height = canvas.height = window.innerHeight;
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight;
 }
 window.addEventListener("resize", resize);
 resize();
 
-const keys = {};
-
-window.addEventListener("keydown", e => {
-    keys[e.key] = true;
-});
-
-window.addEventListener("keyup", e => {
-    keys[e.key] = false;
-});
-
-const road = {
-    x: width / 2,
-    width: 500,
-    lineOffset: 0
+const dancer = {
+    x: w / 2,
+    y: h * 0.68,
+    scale: 1,
+    dancing: false,
+    danceTime: 0
 };
 
-const car = {
-    x: width / 2,
-    y: height * 0.75,
-    width: 42,
-    height: 78,
+canvas.addEventListener("click", e => {
 
-    speed: 0,
-    maxSpeed: 12,
-    acceleration: 0.22,
-    friction: 0.06,
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
 
-    angle: 0,
-    velocityAngle: 0,
+    const dx = mx - dancer.x;
+    const dy = my - dancer.y;
 
-    driftFactor: 0.94,
-    steering: 0.045
-};
-
-const particles = [];
-const obstacles = [];
-
-function createObstacle(y) {
-
-    const margin = 70;
-
-    const x =
-        road.x -
-        road.width / 2 +
-        margin +
-        Math.random() * (road.width - margin * 2);
-
-    obstacles.push({
-        x,
-        y,
-        width: 55,
-        height: 55,
-        color: Math.random() > 0.5 ? "#ff5f5f" : "#ffaa33"
-    });
-}
-
-for (let i = 0; i < 10; i++) {
-    createObstacle(-i * 300);
-}
-
-function spawnSmoke() {
-
-    if (Math.abs(car.speed) > 3 &&
-        (keys["ArrowLeft"] || keys["ArrowRight"])) {
-
-        particles.push({
-            x: car.x,
-            y: car.y + car.height / 3,
-            radius: Math.random() * 8 + 4,
-            alpha: 0.4,
-            vx: (Math.random() - 0.5) * 2,
-            vy: Math.random() * 2 + 1
-        });
+    if (Math.abs(dx) < 80 && Math.abs(dy) < 180) {
+        dancer.dancing = !dancer.dancing;
     }
-}
+});
 
-function updateCar() {
+function drawBackground() {
 
-    if (keys["ArrowUp"]) {
-        car.speed += car.acceleration;
-    }
+    // sun
+    ctx.beginPath();
+    ctx.fillStyle = "#ffd95c";
+    ctx.arc(w - 150, 120, 60, 0, Math.PI * 2);
+    ctx.fill();
 
-    if (keys["ArrowDown"]) {
-        car.speed -= car.acceleration;
-    }
+    // ocean
+    ctx.fillStyle = "#39b7e8";
+    ctx.fillRect(0, h * 0.45, w, h * 0.15);
 
-    if (car.speed > 0) {
-        car.speed -= car.friction;
-    }
+    // waves
+    ctx.strokeStyle = "rgba(255,255,255,0.5)";
+    ctx.lineWidth = 2;
 
-    if (car.speed < 0) {
-        car.speed += car.friction;
-    }
+    for (let i = 0; i < 6; i++) {
 
-    if (Math.abs(car.speed) < 0.05) {
-        car.speed = 0;
-    }
+        ctx.beginPath();
 
-    car.speed = Math.max(
-        -car.maxSpeed / 2,
-        Math.min(car.speed, car.maxSpeed)
-    );
+        for (let x = 0; x < w; x += 20) {
 
-    // steering + drift
-    if (car.speed !== 0) {
+            const y =
+                h * 0.5 +
+                i * 15 +
+                Math.sin(x * 0.02 + performance.now() * 0.002) * 5;
 
-        const direction = car.speed > 0 ? 1 : -1;
-
-        if (keys["ArrowLeft"]) {
-            car.angle -= car.steering * direction;
-        }
-
-        if (keys["ArrowRight"]) {
-            car.angle += car.steering * direction;
-        }
-    }
-
-    // smooth drifting
-    car.velocityAngle +=
-        (car.angle - car.velocityAngle) *
-        (1 - car.driftFactor);
-
-    car.x += Math.sin(car.velocityAngle) * car.speed;
-
-    road.lineOffset += car.speed * 8;
-
-    spawnSmoke();
-
-    // road boundaries
-    const left =
-        road.x - road.width / 2 + 30;
-
-    const right =
-        road.x + road.width / 2 - 30;
-
-    if (car.x < left) {
-        car.x = left;
-        car.speed *= 0.95;
-    }
-
-    if (car.x > right) {
-        car.x = right;
-        car.speed *= 0.95;
-    }
-
-    speedEl.innerText =
-        "Speed: " + Math.floor(Math.abs(car.speed) * 10);
-}
-
-function updateObstacles() {
-
-    obstacles.forEach(obstacle => {
-        obstacle.y += car.speed * 8;
-
-        // recycle obstacles
-        if (obstacle.y > height + 100) {
-            obstacle.y = -300;
-            obstacle.x =
-                road.x -
-                road.width / 2 +
-                70 +
-                Math.random() *
-                (road.width - 140);
-        }
-
-        // collision detection
-        const dx = Math.abs(car.x - obstacle.x);
-        const dy = Math.abs(car.y - obstacle.y);
-
-        if (
-            dx < (car.width + obstacle.width) / 2 &&
-            dy < (car.height + obstacle.height) / 2
-        ) {
-            car.speed *= -0.4;
-
-            // collision burst
-            for (let i = 0; i < 25; i++) {
-                particles.push({
-                    x: obstacle.x,
-                    y: obstacle.y,
-                    radius: Math.random() * 6 + 2,
-                    alpha: 1,
-                    vx: (Math.random() - 0.5) * 8,
-                    vy: (Math.random() - 0.5) * 8
-                });
+            if (x === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
             }
         }
-    });
+
+        ctx.stroke();
+    }
 }
 
-function updateParticles() {
+function drawPalms() {
 
-    for (let i = particles.length - 1; i >= 0; i--) {
+    function palm(x) {
 
-        const p = particles[i];
+        ctx.strokeStyle = "#6d4325";
+        ctx.lineWidth = 16;
 
-        p.x += p.vx;
-        p.y += p.vy;
-        p.alpha -= 0.02;
-        p.radius *= 0.985;
+        ctx.beginPath();
+        ctx.moveTo(x, h);
+        ctx.quadraticCurveTo(x + 30, h - 220, x, h - 420);
+        ctx.stroke();
 
-        if (p.alpha <= 0) {
-            particles.splice(i, 1);
+        ctx.strokeStyle = "#2f9e44";
+        ctx.lineWidth = 8;
+
+        for (let i = 0; i < 7; i++) {
+
+            const angle = -1 + i * 0.35;
+
+            ctx.beginPath();
+            ctx.moveTo(x, h - 420);
+
+            ctx.lineTo(
+                x + Math.cos(angle) * 100,
+                h - 420 + Math.sin(angle) * 100
+            );
+
+            ctx.stroke();
         }
     }
+
+    palm(120);
+    palm(w - 120);
 }
 
-function drawRoad() {
+function drawDancer(time) {
 
-    // grass
-    ctx.fillStyle = "#17361d";
-    ctx.fillRect(0, 0, width, height);
+    const t = dancer.dancing ? time * 0.008 : 0;
 
-    // road
-    ctx.fillStyle = "#2f2f2f";
-    ctx.fillRect(
-        road.x - road.width / 2,
-        0,
-        road.width,
-        height
-    );
-
-    // road glow
-    const glow = ctx.createLinearGradient(
-        0,0,width,0
-    );
-
-    glow.addColorStop(0, "rgba(255,255,255,0)");
-    glow.addColorStop(0.5, "rgba(255,255,255,0.03)");
-    glow.addColorStop(1, "rgba(255,255,255,0)");
-
-    ctx.fillStyle = glow;
-    ctx.fillRect(
-        road.x - road.width / 2,
-        0,
-        road.width,
-        height
-    );
-
-    // lane lines
-    ctx.strokeStyle = "#ffd84d";
-    ctx.lineWidth = 5;
-
-    for (let y = -80; y < height + 80; y += 80) {
-
-        const yy =
-            (y + road.lineOffset) %
-            (height + 80);
-
-        ctx.beginPath();
-        ctx.moveTo(road.x, yy);
-        ctx.lineTo(road.x, yy + 40);
-        ctx.stroke();
-    }
-
-    // borders
-    ctx.strokeStyle = "#ffffff";
-    ctx.lineWidth = 7;
-
-    ctx.beginPath();
-    ctx.moveTo(road.x - road.width/2, 0);
-    ctx.lineTo(road.x - road.width/2, height);
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.moveTo(road.x + road.width/2, 0);
-    ctx.lineTo(road.x + road.width/2, height);
-    ctx.stroke();
-}
-
-function drawObstacles() {
-
-    obstacles.forEach(o => {
-
-        ctx.save();
-
-        ctx.translate(o.x, o.y);
-
-        // shadow
-        ctx.fillStyle = "rgba(0,0,0,0.35)";
-        ctx.fillRect(-26 + 4, -26 + 4, 52, 52);
-
-        // obstacle
-        ctx.fillStyle = o.color;
-
-        ctx.beginPath();
-        ctx.roundRect(-26, -26, 52, 52, 10);
-        ctx.fill();
-
-        // warning stripes
-        ctx.strokeStyle = "rgba(255,255,255,0.5)";
-        ctx.lineWidth = 3;
-
-        ctx.beginPath();
-        ctx.moveTo(-18, -18);
-        ctx.lineTo(18, 18);
-
-        ctx.moveTo(18, -18);
-        ctx.lineTo(-18, 18);
-
-        ctx.stroke();
-
-        ctx.restore();
-    });
-}
-
-function drawParticles() {
-
-    particles.forEach(p => {
-
-        ctx.beginPath();
-
-        ctx.fillStyle =
-            `rgba(220,220,220,${p.alpha})`;
-
-        ctx.arc(
-            p.x,
-            p.y,
-            p.radius,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.fill();
-    });
-}
-
-function drawCar() {
+    const sway = Math.sin(t * 2) * 15;
+    const hip = Math.sin(t * 3) * 12;
+    const armSwing = Math.sin(t * 4) * 25;
+    const legSwing = Math.sin(t * 4) * 18;
 
     ctx.save();
 
-    ctx.translate(car.x, car.y);
-
-    // body drift tilt
-    ctx.rotate(car.velocityAngle);
+    ctx.translate(dancer.x, dancer.y + Math.sin(t * 6) * 5);
 
     // shadow
-    ctx.fillStyle = "rgba(0,0,0,0.35)";
-    ctx.fillRect(
-        -car.width/2 + 5,
-        -car.height/2 + 5,
-        car.width,
-        car.height
-    );
-
-    // body gradient
-    const gradient =
-        ctx.createLinearGradient(
-            0,
-            -car.height/2,
-            0,
-            car.height/2
-        );
-
-    gradient.addColorStop(0, "#5fd0ff");
-    gradient.addColorStop(1, "#0066ff");
-
-    ctx.fillStyle = gradient;
-
     ctx.beginPath();
-    ctx.roundRect(
-        -car.width/2,
-        -car.height/2,
-        car.width,
-        car.height,
-        12
-    );
+    ctx.fillStyle = "rgba(0,0,0,0.2)";
+    ctx.ellipse(0, 120, 55, 16, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // windshield
-    ctx.fillStyle = "#d8f5ff";
-
+    // head
     ctx.beginPath();
-    ctx.roundRect(
-        -14,
-        -22,
-        28,
-        18,
-        4
-    );
+    ctx.fillStyle = "#f1c27d";
+    ctx.arc(0, -130, 32, 0, Math.PI * 2);
     ctx.fill();
 
-    // rear glass
+    // hair
     ctx.beginPath();
-    ctx.roundRect(
-        -14,
-        6,
-        28,
-        18,
-        4
-    );
+    ctx.fillStyle = "#2b1b12";
+    ctx.arc(0, -138, 35, Math.PI, Math.PI * 2);
     ctx.fill();
 
-    // neon glow
-    ctx.shadowColor = "#3bc7ff";
-    ctx.shadowBlur = 25;
+    // body
+    ctx.save();
+    ctx.rotate(sway * 0.01);
 
-    ctx.fillStyle = "rgba(80,180,255,0.35)";
-    ctx.fillRect(
-        -car.width/2 + 4,
-        car.height/2 - 4,
-        car.width - 8,
-        4
-    );
+    ctx.fillStyle = "#f1c27d";
 
-    // wheels
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = "#111";
+    ctx.beginPath();
+    ctx.roundRect(-24, -95, 48, 95, 20);
+    ctx.fill();
 
-    ctx.fillRect(-car.width/2 - 4, -24, 6, 16);
-    ctx.fillRect(car.width/2 - 2, -24, 6, 16);
+    // bikini top
+    ctx.fillStyle = "#ff4fa3";
 
-    ctx.fillRect(-car.width/2 - 4, 8, 6, 16);
-    ctx.fillRect(car.width/2 - 2, 8, 6, 16);
+    ctx.beginPath();
+    ctx.moveTo(-24, -75);
+    ctx.lineTo(0, -55);
+    ctx.lineTo(-8, -35);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(24, -75);
+    ctx.lineTo(0, -55);
+    ctx.lineTo(8, -35);
+    ctx.closePath();
+    ctx.fill();
+
+    // bikini bottom
+    ctx.beginPath();
+    ctx.moveTo(-24, -5);
+    ctx.lineTo(24, -5);
+    ctx.lineTo(16, 28);
+    ctx.lineTo(-16, 28);
+    ctx.closePath();
+    ctx.fill();
+
+    // arms
+    ctx.strokeStyle = "#f1c27d";
+    ctx.lineWidth = 14;
+    ctx.lineCap = "round";
+
+    // left arm
+    ctx.beginPath();
+    ctx.moveTo(-22, -70);
+    ctx.lineTo(-65, -20 + armSwing);
+    ctx.stroke();
+
+    // right arm
+    ctx.beginPath();
+    ctx.moveTo(22, -70);
+    ctx.lineTo(65, -20 - armSwing);
+    ctx.stroke();
+
+    // legs
+    ctx.beginPath();
+    ctx.moveTo(-10, 25);
+    ctx.lineTo(-18 - legSwing * 0.2, 110);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(10, 25);
+    ctx.lineTo(18 + legSwing * 0.2, 110);
+    ctx.stroke();
+
+    ctx.restore();
+
+    // sparkle particles when dancing
+    if (dancer.dancing) {
+
+        for (let i = 0; i < 10; i++) {
+
+            const angle = (Math.PI * 2 / 10) * i + t;
+
+            const px = Math.cos(angle) * 90;
+            const py = Math.sin(angle) * 120;
+
+            ctx.beginPath();
+            ctx.fillStyle = `hsla(${time * 0.05 + i * 30},100%,70%,0.8)`;
+            ctx.arc(px, py - 40, 4, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
 
     ctx.restore();
 }
 
-function animate() {
+function animate(time) {
 
-    ctx.clearRect(0, 0, width, height);
+    ctx.clearRect(0, 0, w, h);
 
-    drawRoad();
-
-    updateCar();
-    updateObstacles();
-    updateParticles();
-
-    drawObstacles();
-    drawParticles();
-    drawCar();
+    drawBackground();
+    drawPalms();
+    drawDancer(time);
 
     requestAnimationFrame(animate);
 }
